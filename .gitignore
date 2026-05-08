@@ -1,0 +1,47 @@
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# Build/cache outputs
+dist/
+dist-data/
+tmp/
+.tmp/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.vitest/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go, Python
+bin/
+*.test
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Keep docs/ committed: GitHub Pages serves from main/docs.

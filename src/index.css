@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+.icon-link {
+  align-items: center;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 8px;
+  color: rgb(15 23 42);
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+}
+
+.icon-link:hover {
+  background: white;
+  border-color: rgb(20 184 166);
+}
+
+.care-panel {
+  background: white;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgb(15 23 42 / 0.1);
+  padding: 1rem;
+}
+
+.primary-action {
+  align-items: center;
+  background: rgb(15 118 110);
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
+}
+
+.primary-action:hover {
+  background: rgb(17 94 89);
+}
+
+.timeline-row {
+  align-items: flex-start;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 5.5rem 1fr;
+  padding: 0.75rem;
+}
+
+.time-chip {
+  background: rgb(236 253 245);
+  border-radius: 6px;
+  color: rgb(6 78 59);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 700;
+  justify-content: center;
+  padding: 0.35rem 0.4rem;
+}
+
+@media (max-width: 520px) {
+  .timeline-row {
+    grid-template-columns: 1fr;
+  }
+}
