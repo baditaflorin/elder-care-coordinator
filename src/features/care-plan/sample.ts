@@ -1,0 +1,139 @@
+import { type CarePlan, schemaVersion } from './types'
+
+const now = '2026-05-08T08:00:00.000Z'
+
+export const sampleCarePlan: CarePlan = {
+  schemaVersion,
+  createdAt: now,
+  updatedAt: now,
+  recipient: {
+    name: 'Maria Ionescu',
+    dateOfBirth: '1943-11-18',
+    address: '120 Maple Street, Apt 4B',
+    primaryDoctor: 'Dr. Elena Popescu',
+    pharmacy: 'Neighborhood Pharmacy, Oak Avenue',
+    insurer: 'ExampleCare Advantage',
+    policyNumber: 'EXC-2048-7731',
+    allergies: 'Penicillin',
+    conditions: 'Type 2 diabetes, hypertension, atrial fibrillation',
+  },
+  caregivers: [
+    {
+      id: 'cg_ana',
+      name: 'Ana',
+      role: 'primary',
+      phone: '+1 555 0101',
+      email: 'ana@example.com',
+    },
+    {
+      id: 'cg_mihai',
+      name: 'Mihai',
+      role: 'transport',
+      phone: '+1 555 0102',
+      email: 'mihai@example.com',
+    },
+    {
+      id: 'cg_ioana',
+      name: 'Ioana',
+      role: 'finance',
+      phone: '+1 555 0103',
+      email: 'ioana@example.com',
+    },
+  ],
+  medications: [
+    {
+      id: 'med_metformin',
+      name: 'Metformin',
+      dose: '500 mg',
+      frequency: 'twice_daily',
+      times: ['08:00', '20:00'],
+      prescriber: 'Dr. Elena Popescu',
+      purpose: 'Blood sugar control',
+      instructions: 'Take with food.',
+      refillBy: '2026-05-22',
+      lastConfirmedAt: '2026-05-08T08:04:00.000Z',
+      confirmedBy: 'cg_ana',
+    },
+    {
+      id: 'med_lisinopril',
+      name: 'Lisinopril',
+      dose: '10 mg',
+      frequency: 'daily',
+      times: ['20:00'],
+      prescriber: 'Dr. Elena Popescu',
+      purpose: 'Blood pressure',
+      instructions: 'Check dizziness and hydration.',
+      refillBy: '2026-05-28',
+    },
+    {
+      id: 'med_apixaban',
+      name: 'Apixaban',
+      dose: '5 mg',
+      frequency: 'twice_daily',
+      times: ['08:00', '20:00'],
+      prescriber: 'Cardiology clinic',
+      purpose: 'Stroke risk reduction',
+      instructions: 'Do not skip without clinician guidance.',
+      refillBy: '2026-06-01',
+    },
+  ],
+  appointments: [
+    {
+      id: 'appt_cardio',
+      dateTime: '2026-05-11T13:30:00.000Z',
+      clinician: 'Cardiology clinic',
+      location: 'Suite 210, City Medical Center',
+      reason: 'Review blood pressure log and anticoagulant plan',
+      preparation: 'Bring BP log, medication list, insurance card, and questions.',
+      followUp: 'Ask whether dizziness could be medication-related.',
+      transportOwnerId: 'cg_mihai',
+    },
+    {
+      id: 'appt_lab',
+      dateTime: '2026-05-15T09:00:00.000Z',
+      clinician: 'Lab draw',
+      location: 'Neighborhood Lab',
+      reason: 'A1C and kidney function',
+      preparation: 'Confirm fasting requirement the day before.',
+      followUp: 'Send results to primary doctor.',
+      transportOwnerId: 'cg_ana',
+    },
+  ],
+  tasks: [
+    {
+      id: 'task_appeal',
+      title: 'Send insurer appeal for denied glucose strips',
+      ownerId: 'cg_ioana',
+      dueDate: '2026-05-10',
+      status: 'open',
+    },
+    {
+      id: 'task_refill',
+      title: 'Request Apixaban refill before weekend',
+      ownerId: 'cg_ana',
+      dueDate: '2026-05-21',
+      status: 'waiting',
+    },
+  ],
+  correspondence: [
+    {
+      id: 'corr_appeal',
+      topic: 'coverage_appeal',
+      recipient: 'ExampleCare Advantage Appeals Department',
+      facts:
+        'Glucose test strips were denied on May 6. Maria has Type 2 diabetes and tests twice daily per primary doctor guidance.',
+      draft: '',
+      updatedAt: now,
+    },
+  ],
+  notes: [
+    {
+      id: 'note_handoff',
+      authorId: 'cg_ana',
+      body: 'Dizziness was mentioned after evening medicine. Add it to cardiology questions.',
+      createdAt: '2026-05-08T08:20:00.000Z',
+    },
+  ],
+  emergencyInstructions:
+    'In an emergency, bring the medication list, allergy list, insurance card, and call Ana first.',
+}

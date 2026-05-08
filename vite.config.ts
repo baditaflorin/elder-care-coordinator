@@ -23,6 +23,7 @@ function gitCommit() {
 export default defineConfig({
   base: '/elder-care-coordinator/',
   build: {
+    target: 'esnext',
     outDir: 'docs',
     emptyOutDir: false,
     rollupOptions: {
