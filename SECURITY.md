@@ -1,6 +1,6 @@
 # Security Policy
 
-Report vulnerabilities privately by opening a security advisory on GitHub or by contacting the repository owner.
+Report vulnerabilities privately by opening a security advisory on GitHub or by emailing baditaflorin@gmail.com.
 
 Do not include real patient, caregiver, medication, insurance, or emergency-contact data in issues, pull requests, screenshots, or sample files.
 
