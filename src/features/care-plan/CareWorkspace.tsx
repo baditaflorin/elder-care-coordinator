@@ -23,6 +23,7 @@ import { transcribeCareNote } from '../assistant/whisper'
 import { encryptWithAgePassphrase, generateAgeRecipientPair } from '../crypto/packetCrypto'
 import { renderPacketWithPandoc } from '../export/pandoc'
 import { downloadText } from '../../shared/download'
+import { useLatestCommit } from '../../shared/useLatestCommit'
 import {
   careLoad,
   caregiverName,
@@ -58,6 +59,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
 
 export function CareWorkspace({ version, commit }: WorkspaceProps) {
   const { error, lastSavedAt, loadState, plan, reset, setError, updatePlan } = useCarePlan()
+  const displayCommit = useLatestCommit(commit)
   const [tab, setTab] = useState<Tab>('dashboard')
   const load = useMemo(() => careLoad(plan), [plan])
   const doses = useMemo(() => upcomingDoses(plan), [plan])
@@ -73,7 +75,7 @@ export function CareWorkspace({ version, commit }: WorkspaceProps) {
             <div>
               <h1>Elder Care Coordinator</h1>
               <p>
-                v{version} · commit {commit}
+                v{version} · commit {displayCommit}
               </p>
             </div>
           </div>
