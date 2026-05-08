@@ -13,7 +13,9 @@ export async function buildLocalReport(plan: CarePlan): Promise<LocalReport> {
   try {
     const duckdb = (await import('@duckdb/duckdb-wasm')) as unknown as {
       getJsDelivrBundles: () => unknown
-      selectBundle: (bundles: unknown) => Promise<{ mainWorker: string; mainModule: string; pthreadWorker?: string }>
+      selectBundle: (
+        bundles: unknown,
+      ) => Promise<{ mainWorker: string; mainModule: string; pthreadWorker?: string }>
       ConsoleLogger: new () => unknown
       AsyncDuckDB: new (
         logger: unknown,

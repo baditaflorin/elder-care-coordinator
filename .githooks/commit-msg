@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+set -eu
+COMMIT_MSG_FILE="$1" make hooks-commit-msg

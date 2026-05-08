@@ -3,10 +3,7 @@ export async function encryptWithAgePassphrase(plaintext: string, passphrase: st
     throw new Error('Use a passphrase with at least 12 characters.')
   }
 
-  const [age, sodiumModule] = await Promise.all([
-    import('age-encryption'),
-    import('libsodium-wrappers-sumo'),
-  ])
+  const [age, sodiumModule] = await Promise.all([import('age-encryption'), import('libsodium-wrappers-sumo')])
   const sodium = sodiumModule.default
   await sodium.ready
 

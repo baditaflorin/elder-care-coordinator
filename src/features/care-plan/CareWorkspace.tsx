@@ -92,8 +92,16 @@ export function CareWorkspace({ version, commit }: WorkspaceProps) {
             <p className="eyebrow">Care profile</p>
             <h2>{plan.recipient.name}</h2>
           </div>
-          <Metric label="Due meds" value={String(load.dueMeds)} tone={load.dueMeds > 0 ? 'alert' : 'steady'} />
-          <Metric label="Open tasks" value={String(load.openTasks)} tone={load.openTasks > 2 ? 'watch' : 'steady'} />
+          <Metric
+            label="Due meds"
+            value={String(load.dueMeds)}
+            tone={load.dueMeds > 0 ? 'alert' : 'steady'}
+          />
+          <Metric
+            label="Open tasks"
+            value={String(load.openTasks)}
+            tone={load.openTasks > 2 ? 'watch' : 'steady'}
+          />
           <Metric label="7-day visits" value={String(load.appointments)} tone="steady" />
           <div className="save-state">
             <span>{loadState === 'loading' ? 'Loading local plan' : 'Saved locally'}</span>
@@ -292,7 +300,15 @@ function MedicationsPanel({
         refillBy: form.refillBy,
       })
     })
-    setForm({ dose: '', instructions: '', name: '', prescriber: '', purpose: '', refillBy: form.refillBy, times: '08:00' })
+    setForm({
+      dose: '',
+      instructions: '',
+      name: '',
+      prescriber: '',
+      purpose: '',
+      refillBy: form.refillBy,
+      times: '08:00',
+    })
   }
 
   return (
@@ -330,13 +346,21 @@ function MedicationsPanel({
         <SectionTitle icon={<Plus size={20} />} title="Add Medication" />
         <FormField label="Name" value={form.name} onChange={(value) => setForm({ ...form, name: value })} />
         <FormField label="Dose" value={form.dose} onChange={(value) => setForm({ ...form, dose: value })} />
-        <FormField label="Times" value={form.times} onChange={(value) => setForm({ ...form, times: value })} />
+        <FormField
+          label="Times"
+          value={form.times}
+          onChange={(value) => setForm({ ...form, times: value })}
+        />
         <FormField
           label="Prescriber"
           value={form.prescriber}
           onChange={(value) => setForm({ ...form, prescriber: value })}
         />
-        <FormField label="Purpose" value={form.purpose} onChange={(value) => setForm({ ...form, purpose: value })} />
+        <FormField
+          label="Purpose"
+          value={form.purpose}
+          onChange={(value) => setForm({ ...form, purpose: value })}
+        />
         <FormField
           label="Instructions"
           value={form.instructions}
@@ -364,14 +388,14 @@ function AppointmentsPanel({
   plan: CarePlan
   updatePlan: (recipe: (draft: CarePlan) => void) => void
 }) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     clinician: '',
     dateTime: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
     followUp: '',
     location: '',
     preparation: '',
     reason: '',
-  })
+  }))
 
   function addAppointment() {
     if (!form.clinician.trim()) return
@@ -432,8 +456,16 @@ function AppointmentsPanel({
           value={form.dateTime}
           onChange={(value) => setForm({ ...form, dateTime: value })}
         />
-        <FormField label="Location" value={form.location} onChange={(value) => setForm({ ...form, location: value })} />
-        <FormField label="Reason" value={form.reason} onChange={(value) => setForm({ ...form, reason: value })} />
+        <FormField
+          label="Location"
+          value={form.location}
+          onChange={(value) => setForm({ ...form, location: value })}
+        />
+        <FormField
+          label="Reason"
+          value={form.reason}
+          onChange={(value) => setForm({ ...form, reason: value })}
+        />
         <FormField
           label="Preparation"
           value={form.preparation}
@@ -467,10 +499,11 @@ function CorrespondencePanel({
   const [voiceProgress, setVoiceProgress] = useState('')
 
   if (!current) return null
+  const active = current
 
-  function updateCurrent(recipe: (item: NonNullable<typeof current>) => void) {
+  function updateCurrent(recipe: (item: typeof active) => void) {
     updatePlan((draft) => {
-      const item = draft.correspondence.find((entry) => entry.id === current.id)
+      const item = draft.correspondence.find((entry) => entry.id === active.id)
       if (item) {
         recipe(item)
         item.updatedAt = new Date().toISOString()
@@ -481,7 +514,7 @@ function CorrespondencePanel({
   async function improveDraft() {
     setProgress('')
     try {
-      const next = await improveDraftWithLocalLlm(plan, current.draft, setProgress)
+      const next = await improveDraftWithLocalLlm(plan, active.draft, setProgress)
       updateCurrent((item) => {
         item.draft = next
       })
@@ -512,7 +545,9 @@ function CorrespondencePanel({
           <span>Topic</span>
           <select
             value={current.topic}
-            onChange={(event) => updateCurrent((item) => (item.topic = event.target.value as CorrespondenceTopic))}
+            onChange={(event) =>
+              updateCurrent((item) => (item.topic = event.target.value as CorrespondenceTopic))
+            }
           >
             <option value="coverage_appeal">Coverage appeal</option>
             <option value="prior_authorization">Prior authorization</option>
@@ -522,11 +557,17 @@ function CorrespondencePanel({
         </label>
         <label className="field">
           <span>Recipient</span>
-          <input value={current.recipient} onChange={(event) => updateCurrent((item) => (item.recipient = event.target.value))} />
+          <input
+            value={current.recipient}
+            onChange={(event) => updateCurrent((item) => (item.recipient = event.target.value))}
+          />
         </label>
         <label className="field">
           <span>Facts</span>
-          <textarea value={current.facts} onChange={(event) => updateCurrent((item) => (item.facts = event.target.value))} />
+          <textarea
+            value={current.facts}
+            onChange={(event) => updateCurrent((item) => (item.facts = event.target.value))}
+          />
         </label>
         <label className="file-input">
           <Mic size={18} />
@@ -537,7 +578,9 @@ function CorrespondencePanel({
         <button
           className="wide-action"
           type="button"
-          onClick={() => updateCurrent((item) => (item.draft = fallbackCorrespondenceDraft(plan, item.topic, item.facts)))}
+          onClick={() =>
+            updateCurrent((item) => (item.draft = fallbackCorrespondenceDraft(plan, item.topic, item.facts)))
+          }
         >
           <FileText size={18} />
           Draft letter
@@ -590,7 +633,9 @@ function PacketPanel({ plan, setError }: { plan: CarePlan; setError: (message: s
     try {
       const encrypted = await encryptWithAgePassphrase(markdown, passphrase)
       downloadText('emergency-packet.age.txt', encrypted.armored)
-      setCryptoStatus(`Encrypted with age passphrase. Plaintext checksum ${encrypted.checksum.slice(0, 16)}...`)
+      setCryptoStatus(
+        `Encrypted with age passphrase. Plaintext checksum ${encrypted.checksum.slice(0, 16)}...`,
+      )
     } catch (caught) {
       setCryptoStatus('')
       setError(caught instanceof Error ? caught.message : 'Encryption failed.')
@@ -613,7 +658,11 @@ function PacketPanel({ plan, setError }: { plan: CarePlan; setError: (message: s
       </section>
       <section className="section-block span-5">
         <SectionTitle icon={<Download size={20} />} title="Exports" />
-        <button className="wide-action" type="button" onClick={() => downloadText('emergency-packet.md', markdown)}>
+        <button
+          className="wide-action"
+          type="button"
+          onClick={() => downloadText('emergency-packet.md', markdown)}
+        >
           <Download size={18} />
           Markdown
         </button>
@@ -717,7 +766,15 @@ function FamilyPanel({
   )
 }
 
-function Metric({ label, tone, value }: { label: string; tone: 'alert' | 'steady' | 'watch'; value: string }) {
+function Metric({
+  label,
+  tone,
+  value,
+}: {
+  label: string
+  tone: 'alert' | 'steady' | 'watch'
+  value: string
+}) {
   return (
     <div className={`metric ${tone}`}>
       <span>{label}</span>

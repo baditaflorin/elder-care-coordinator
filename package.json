@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/copy-404.mjs",
+    "build": "node scripts/clean-pages.mjs && tsc -b && vite build && node scripts/copy-404.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "typecheck": "tsc -b",
     "pages-preview": "http-server docs -p 4173 -c-1",
     "preview": "vite preview",
     "smoke": "bash scripts/smoke.sh",
