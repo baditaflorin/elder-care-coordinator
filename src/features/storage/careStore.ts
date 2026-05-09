@@ -1,6 +1,7 @@
 import { openDB, type DBSchema } from 'idb'
 import * as Y from 'yjs'
 import { carePlanSchema, type CarePlan } from '../care-plan/types'
+import { migrateCarePlan } from './migrations'
 
 const dbName = 'elder-care-coordinator'
 const storeName = 'care-documents'
@@ -36,7 +37,7 @@ export async function loadCarePlan() {
   try {
     return decodeYUpdate(stored.yUpdate)
   } catch {
-    return carePlanSchema.parse(stored.snapshot)
+    return migrateCarePlan(stored.snapshot)
   }
 }
 
@@ -66,5 +67,5 @@ export function decodeYUpdate(update: Uint8Array) {
   const doc = new Y.Doc()
   Y.applyUpdate(doc, update)
   const snapshot = doc.getMap('care').get('snapshot')
-  return carePlanSchema.parse(snapshot)
+  return migrateCarePlan(snapshot)
 }
