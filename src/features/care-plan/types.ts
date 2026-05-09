@@ -81,6 +81,14 @@ export const noteSchema = z.object({
   createdAt: z.string(),
 })
 
+export const activityLogSchema = z.object({
+  id: z.string(),
+  at: z.string(),
+  kind: z.enum(['intake_applied', 'manual_edit', 'export_created']),
+  sourceId: z.string(),
+  summary: z.string(),
+})
+
 export const carePlanSchema = z.object({
   schemaVersion: z.literal(schemaVersion),
   createdAt: z.string(),
@@ -92,6 +100,7 @@ export const carePlanSchema = z.object({
   tasks: z.array(taskSchema),
   correspondence: z.array(correspondenceSchema),
   notes: z.array(noteSchema),
+  activityLog: z.array(activityLogSchema).default([]),
   emergencyInstructions: z.string(),
 })
 

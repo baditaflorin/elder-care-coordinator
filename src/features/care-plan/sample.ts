@@ -134,6 +134,7 @@ export const sampleCarePlan: CarePlan = {
       createdAt: '2026-05-08T08:20:00.000Z',
     },
   ],
+  activityLog: [],
   emergencyInstructions:
     'In an emergency, bring the medication list, allergy list, insurance card, and call Ana first.',
 }
