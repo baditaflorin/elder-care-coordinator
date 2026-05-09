@@ -32,7 +32,18 @@ try {
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export workspace JSON' }).click()
   const download = await downloadPromise
-  await download.path()
+  const statePath = await download.path()
+  if (!statePath) throw new Error('Workspace export did not produce a local file.')
+  await page.getByRole('button', { name: 'Reset workspace to sample' }).click()
+  await page.getByText('Reset local workspace').waitFor()
+  await page
+    .locator('label')
+    .filter({ hasText: 'Import workspace JSON' })
+    .locator('input[type="file"]')
+    .setInputFiles(statePath)
+  await page.getByText('Imported workspace').waitFor()
+  await page.getByRole('button', { name: 'Medications' }).click()
+  await page.getByText('Vitamin D 1000 IU').waitFor()
 } finally {
   await browser.close()
   await server.close()
