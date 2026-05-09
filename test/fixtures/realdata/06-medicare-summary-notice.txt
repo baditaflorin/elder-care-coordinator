@@ -1,0 +1,9 @@
+Medicare Summary Notice
+Provider: City Medical Center
+Service date: 04/22/2026
+Claim number: MSN-442190
+Item: Glucose test strips
+Amount charged: $120.00
+Medicare approved: $0.00
+Reason: Medicare did not pay for this item because the information submitted did not show medical necessity.
+Appeal by: 08/20/2026

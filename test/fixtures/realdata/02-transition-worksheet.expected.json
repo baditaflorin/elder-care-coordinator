@@ -1,0 +1,10 @@
+{
+  "id": "02-transition-worksheet",
+  "sourceUrl": "https://www.ahrq.gov/sites/default/files/publications/files/match.pdf",
+  "expectedShape": "discharge_reconciliation",
+  "minCandidates": 3,
+  "requiredTypes": ["medication"],
+  "requiredTexts": ["Warfarin", "Apixaban", "Metformin"],
+  "maxLowConfidence": 1,
+  "mustWarn": ["stopped medication", "transition"]
+}

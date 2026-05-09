@@ -1,0 +1,6 @@
+Discharge medication orders checklist
+Before admission: Lisinopril 20 mg tablet once daily.
+New discharge order: Lisinopril 10 mg tablet once daily.
+Discontinued: Hydrochlorothiazide 25 mg daily.
+New: Furosemide 20 mg every morning for swelling.
+Patient instructions say to bring all old bottles to the follow-up visit.

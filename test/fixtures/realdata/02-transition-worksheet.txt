@@ -1,0 +1,8 @@
+Medication reconciliation at transition of care
+Home medications:
+Warfarin 5 mg by mouth daily. Last dose yesterday evening.
+Metformin 500 mg by mouth twice daily with meals.
+Discharge medications:
+STOP Warfarin.
+START Apixaban 5 mg by mouth twice daily.
+CONTINUE Metformin 500 mg by mouth twice daily with meals.

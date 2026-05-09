@@ -1,0 +1,10 @@
+{
+  "id": "07-insurance-denial",
+  "sourceUrl": "https://www.insurance.wa.gov/insurance-resources/health-insurance/appealing-health-insurance-denial/common-reasons-denial-and-examples-appeal-letters",
+  "expectedShape": "insurance_denial",
+  "minCandidates": 1,
+  "requiredTypes": ["correspondence", "task"],
+  "requiredTexts": ["prior authorization", "continuous glucose monitor", "supporting medical records"],
+  "maxLowConfidence": 1,
+  "mustWarn": ["supporting document"]
+}

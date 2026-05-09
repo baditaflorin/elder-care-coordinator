@@ -1,0 +1,10 @@
+{
+  "id": "09-appointment-reminder",
+  "sourceUrl": "https://help.icehealthsystems.com/schedule/send-appointment-reminders",
+  "expectedShape": "appointment",
+  "minCandidates": 1,
+  "requiredTypes": ["appointment"],
+  "requiredTexts": ["Cardiology Clinic", "City Medical Center", "blood pressure log"],
+  "maxLowConfidence": 1,
+  "mustWarn": ["timezone"]
+}

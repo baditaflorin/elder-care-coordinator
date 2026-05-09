@@ -1,0 +1,4 @@
+Medication | Strength | How I take it | Reason | Comments
+Metformin | 500 mg | 1 tablet twice daily with meals | diabetes | refill due 2026-05-22
+Lisinopril | 10 mg | one tablet every evening | blood pressure | watch dizziness
+Apixaban | 5 mg | take one tablet by mouth twice daily | stroke risk | do not skip

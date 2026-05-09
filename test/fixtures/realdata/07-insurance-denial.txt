@@ -1,0 +1,8 @@
+Health plan denial notice
+Member: Maria I.
+Policy: EXC-2048-7731
+Denial reason: Prior authorization required before coverage.
+Service: continuous glucose monitor sensors
+Date of denial: May 6, 2026
+You may appeal this decision within 60 days.
+Ask the prescriber for supporting medical records.

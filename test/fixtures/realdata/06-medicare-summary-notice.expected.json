@@ -1,0 +1,10 @@
+{
+  "id": "06-medicare-summary-notice",
+  "sourceUrl": "https://www.cms.gov/MSN",
+  "expectedShape": "insurance_denial",
+  "minCandidates": 1,
+  "requiredTypes": ["correspondence"],
+  "requiredTexts": ["MSN-442190", "Glucose test strips", "08/20/2026"],
+  "maxLowConfidence": 0,
+  "mustWarn": []
+}

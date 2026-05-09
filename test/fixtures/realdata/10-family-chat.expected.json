@@ -1,0 +1,10 @@
+{
+  "id": "10-family-chat",
+  "sourceUrl": "https://www.parwah.co/",
+  "expectedShape": "family_chat",
+  "minCandidates": 4,
+  "requiredTypes": ["note", "task", "medication_confirmation", "appointment"],
+  "requiredTexts": ["Metformin", "cardiology", "call insurer", "Lisinopril"],
+  "maxLowConfidence": 2,
+  "mustWarn": []
+}

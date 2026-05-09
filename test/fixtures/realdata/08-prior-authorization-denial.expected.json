@@ -1,0 +1,10 @@
+{
+  "id": "08-prior-authorization-denial",
+  "sourceUrl": "https://www.patientadvocate.org/download-view/sample-appeal-letter-for-pre-authorization-denial/",
+  "expectedShape": "prior_authorization",
+  "minCandidates": 2,
+  "requiredTypes": ["correspondence", "task"],
+  "requiredTexts": ["PA-7781", "Apixaban", "step therapy"],
+  "maxLowConfidence": 1,
+  "mustWarn": ["supporting document"]
+}

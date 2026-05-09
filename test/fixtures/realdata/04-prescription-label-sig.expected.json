@@ -1,0 +1,10 @@
+{
+  "id": "04-prescription-label-sig",
+  "sourceUrl": "https://toledofamilypharmacy.com/understanding-your-prescription-label/",
+  "expectedShape": "prescription_sig",
+  "minCandidates": 1,
+  "requiredTypes": ["medication"],
+  "requiredTexts": ["Amoxicillin"],
+  "maxLowConfidence": 0,
+  "mustWarn": []
+}

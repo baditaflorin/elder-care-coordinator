@@ -1,0 +1,10 @@
+{
+  "id": "03-discharge-conflict",
+  "sourceUrl": "https://www.mass.gov/doc/section-08-medication-reconciliation-discharge-hcp-orders-checklist-sample-0/download",
+  "expectedShape": "discharge_reconciliation",
+  "minCandidates": 3,
+  "requiredTypes": ["medication"],
+  "requiredTexts": ["Lisinopril", "Hydrochlorothiazide", "Furosemide"],
+  "maxLowConfidence": 2,
+  "mustWarn": ["dose changed", "discontinued"]
+}

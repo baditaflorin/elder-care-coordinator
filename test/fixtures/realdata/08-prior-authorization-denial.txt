@@ -1,0 +1,7 @@
+Prior Authorization Denial
+Reference ID: PA-7781
+Medication: Apixaban 5 mg tablets
+Denied because: step therapy not documented.
+Prescriber: Cardiology Clinic
+Urgent review requested because patient has atrial fibrillation.
+Fax appeal documents with chart notes and medication history.

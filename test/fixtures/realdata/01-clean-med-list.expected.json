@@ -1,0 +1,10 @@
+{
+  "id": "01-clean-med-list",
+  "sourceUrl": "https://professionals.wrha.mb.ca/old/professionals/primary-care-providers/files/SAMPLEPatientFriendly.pdf",
+  "expectedShape": "medication_list",
+  "minCandidates": 3,
+  "requiredTypes": ["medication"],
+  "requiredTexts": ["Metformin", "Lisinopril", "Apixaban"],
+  "maxLowConfidence": 1,
+  "mustWarn": []
+}
