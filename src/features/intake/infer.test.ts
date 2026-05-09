@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { z } from 'zod'
 import { analyzeCareInput } from './infer'
 
-type ExpectedFixture = {
-  expectedShape: string
-  maxLowConfidence: number
-  minCandidates: number
-  mustWarn: string[]
-  requiredTexts: string[]
-  requiredTypes: string[]
-}
+const expectedFixtureSchema = z.object({
+  expectedShape: z.string(),
+  maxLowConfidence: z.number(),
+  minCandidates: z.number(),
+  mustWarn: z.array(z.string()),
+  requiredTexts: z.array(z.string()),
+  requiredTypes: z.array(z.string()),
+})
 
 const fixtureDir = join(process.cwd(), 'test/fixtures/realdata')
 const fixtureNames = readdirSync(fixtureDir)
@@ -22,9 +23,9 @@ describe('care intake real-data fixtures', () => {
     it(`infers useful candidates for ${fixtureName}`, async () => {
       const id = fixtureName.replace('.txt', '')
       const input = readFileSync(join(fixtureDir, fixtureName), 'utf8')
-      const expected = JSON.parse(
-        readFileSync(join(fixtureDir, `${id}.expected.json`), 'utf8'),
-      ) as ExpectedFixture
+      const expected = expectedFixtureSchema.parse(
+        JSON.parse(readFileSync(join(fixtureDir, `${id}.expected.json`), 'utf8')),
+      )
 
       const result = await analyzeCareInput(input)
       const repeated = await analyzeCareInput(input)

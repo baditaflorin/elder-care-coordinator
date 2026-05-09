@@ -11,6 +11,7 @@ export type LocalReport = {
 
 export async function buildLocalReport(plan: CarePlan): Promise<LocalReport> {
   try {
+    // Boundary adapter: duckdb-wasm does not expose the narrow runtime shape we use here.
     const duckdb = (await import('@duckdb/duckdb-wasm')) as unknown as {
       getJsDelivrBundles: () => unknown
       selectBundle: (

@@ -103,7 +103,7 @@ function htmlToText(html: string) {
 
 function jsonToText(text: string) {
   try {
-    const parsed = JSON.parse(text) as unknown
+    const parsed: unknown = JSON.parse(text)
     return flattenJson(parsed).join('\n')
   } catch {
     throw new Error(

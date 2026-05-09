@@ -10,8 +10,9 @@ export function useLatestCommit(fallback: string) {
         headers: { Accept: 'application/vnd.github+json' },
       })
       if (!response.ok) throw new Error('Unable to fetch latest commit.')
-      const payload = (await response.json()) as { sha?: string }
-      return payload.sha?.slice(0, 7) || fallback
+      const payload: unknown = await response.json()
+      if (isCommitPayload(payload)) return payload.sha.slice(0, 7)
+      return fallback
     },
     refetchOnWindowFocus: false,
     retry: false,
@@ -19,4 +20,9 @@ export function useLatestCommit(fallback: string) {
   })
 
   return query.data ?? fallback
+}
+
+function isCommitPayload(value: unknown): value is { sha: string } {
+  if (typeof value !== 'object' || value === null) return false
+  return typeof Object.getOwnPropertyDescriptor(value, 'sha')?.value === 'string'
 }
