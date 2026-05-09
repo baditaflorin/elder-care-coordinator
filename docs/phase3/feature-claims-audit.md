@@ -30,3 +30,10 @@ Date: 2026-05-10
 1. README says users can use their real pasted data, but file/clipboard pathways are absent.
 2. ADR 0005 mentions backup/export visibility, but full workspace export/import is absent.
 3. Packet export has provenance, but users cannot move the whole workspace to another browser.
+
+## Status After Phase 3
+
+- Real-data claims now include paste, file upload, drag-drop, clipboard, sample artifact, and small hash links.
+- Backup/export visibility is fulfilled by workspace JSON export/import in Settings.
+- Packet provenance remains configurable, and full workspace portability is tested.
+- README and privacy docs were updated for v0.3.0 reality in the release batch.

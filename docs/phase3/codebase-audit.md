@@ -50,3 +50,19 @@ Date: 2026-05-10
 2. Clipboard/share/print paths are not smoke-tested.
 3. File upload/drag-drop pathways are not smoke-tested.
 4. Settings persistence is not tested.
+
+## Measurements After Implementation
+
+| Metric                      |      After | Evidence                                                                                 |
+| --------------------------- | ---------: | ---------------------------------------------------------------------------------------- |
+| TODO/FIXME/XXX/HACK         |          0 | `rg` found no source occurrences.                                                        |
+| Source `any` / `@ts-ignore` |          0 | `rg` found none in source/scripts/tests.                                                 |
+| Test files                  |          5 | Planner, intake inference, intake apply, input files, state files.                       |
+| Real-user smoke paths       | 1 expanded | File upload, review/apply, medication form, packet, settings, state export/reset/import. |
+| Explicit boundary casts     |          1 | DuckDB dynamic import adapter is marked as a boundary.                                   |
+
+## Remaining Accepted Debt
+
+- `CareWorkspace.tsx` remains large because Phase 3 prioritized completing user pathways over a risky panel split.
+- `infer.ts` remains large and is intentionally unchanged by the "no engine changes" constraint.
+- `index.css` remains global CSS; a CSS module/component split is a Phase 4 candidate.

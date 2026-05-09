@@ -26,3 +26,21 @@ Date: 2026-05-10
 2. The most common real output action, copy/paste into email or portal, requires manual selection.
 3. Printing the emergency packet requires downloading or browser gymnastics.
 4. Share links need explicit size/privacy limits rather than silent failure.
+
+## Status After Phase 3
+
+| Exit path                          | Status after Phase 3      | Evidence                                                               |
+| ---------------------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| Emergency packet Markdown download | green                     | Existing Markdown button retained.                                     |
+| Emergency packet HTML download     | green                     | Renamed HTML export; fallback remains.                                 |
+| Encrypted age packet download      | green                     | Existing passphrase export retained.                                   |
+| Insurance draft text download      | green                     | Existing download retained.                                            |
+| Copy draft/packet                  | green                     | Clipboard copy buttons added with user-safe errors.                    |
+| Print packet                       | green                     | Print packet opens printable HTML and invokes browser print.           |
+| Downloadable full state file       | green                     | Settings exports `elder-care-state.v1` JSON.                           |
+| Import exported state file         | green                     | Settings imports the same JSON; smoke test covers export-reset-import. |
+| CSV export                         | out of scope              | Not claimed.                                                           |
+| API/curl-ready output              | out of scope              | Mode A has no API.                                                     |
+| Screenshot export                  | out of scope              | Dev-only screenshot script remains.                                    |
+| Shareable URL                      | green for small artifacts | Hash link supports small intake text; large state uses JSON file.      |
+| Embed code                         | out of scope              | ADR 0062 rejects it.                                                   |

@@ -31,3 +31,23 @@ Mode: A, GitHub Pages only.
 3. Clipboard permission flow is not explicit.
 4. HTML/CSV input is treated as plain text, which is surprising when users export from portals.
 5. URL import would be misleading on GitHub Pages; the app needs an honest static-friendly alternative.
+
+## Status After Phase 3
+
+| Entry point                        | Status after Phase 3       | Evidence                                                                                |
+| ---------------------------------- | -------------------------- | --------------------------------------------------------------------------------------- |
+| Paste text                         | green                      | Care artifact textarea remains wired to review/apply.                                   |
+| Paste HTML                         | green                      | User can choose HTML text; tags are stripped before review.                             |
+| Paste image/OCR                    | out of scope               | ADR 0061 keeps OCR out of Phase 3.                                                      |
+| Clipboard read                     | green                      | Read clipboard button loads text or gives fallback guidance.                            |
+| Text file upload                   | green                      | Choose files accepts text-like files and smoke test covers a fixture file.              |
+| HTML/CSV/Markdown/JSON file upload | green                      | Format detection and preparation helpers are tested.                                    |
+| Multi-file upload                  | green                      | Multiple files are batched with source headers and per-file format summaries.           |
+| Drag-and-drop                      | green                      | Drop zone reads the same file pathway as upload.                                        |
+| Mobile file picker                 | green                      | Standard file input supports mobile Files/share sources where the browser exposes them. |
+| Folder upload                      | out of scope               | ADR 0061 rejects folder import for v0.3.                                                |
+| URL input                          | out of scope with guidance | URL-like input returns static Pages/CORS guidance.                                      |
+| Sample/demo input                  | green                      | Load sample button fills a realistic transition-of-care artifact.                       |
+| Imported care-plan state           | green                      | Settings imports versioned workspace JSON.                                              |
+| Restored autosave                  | green                      | IndexedDB/Yjs path remains active.                                                      |
+| Deep links                         | green for small artifacts  | Small artifact hash links load into the review textarea.                                |

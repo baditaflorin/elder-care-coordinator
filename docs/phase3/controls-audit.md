@@ -38,3 +38,11 @@ Date: 2026-05-10
 2. No explicit import/export controls for the full workspace.
 3. Some labels promise implementation details instead of user outcomes.
 4. One topic control uses a TypeScript cast instead of a boundary parser.
+
+## Status After Phase 3
+
+- Settings tab added with three working settings: auto-select review candidates, include packet provenance, and default caregiver for imported tasks.
+- Workspace export/import controls added and covered by smoke test.
+- Packet HTML control renamed to HTML export.
+- Correspondence topic changes are validated through `correspondenceTopicSchema`.
+- Draft copy, packet copy, packet print, file upload, clipboard read, sample artifact, and small-link controls are wired to real handlers.
