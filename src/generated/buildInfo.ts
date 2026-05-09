@@ -1,4 +1,4 @@
 export const buildInfo = {
-  version: '0.2.0',
-  commit: 'd3d719a',
+  version: '0.3.0',
+  commit: 'd09db5c',
 } as const

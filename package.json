@@ -1,7 +1,7 @@
 {
   "name": "elder-care-coordinator",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-first elder care coordination for meds, appointments, insurance drafts, and emergency packets.",
   "type": "module",
   "scripts": {
