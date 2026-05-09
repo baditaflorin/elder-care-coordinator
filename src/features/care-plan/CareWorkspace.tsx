@@ -6,20 +6,23 @@ import {
   Database,
   Download,
   FileText,
+  FolderOpen,
   Info,
   KeyRound,
   MailPlus,
   Mic,
+  Printer,
   Pill,
   Plus,
   RefreshCw,
+  Settings,
   ShieldCheck,
   Sparkles,
   Trash2,
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import type { ReactNode } from 'react'
 import { buildLocalReport, type LocalReport } from '../analytics/duckdbReport'
 import { fallbackCorrespondenceDraft, improveDraftWithLocalLlm } from '../assistant/localAssistant'
@@ -28,8 +31,21 @@ import { encryptWithAgePassphrase, generateAgeRecipientPair } from '../crypto/pa
 import { renderPacketWithPandoc } from '../export/pandoc'
 import { applyIntakeResult } from '../intake/apply'
 import { analyzeCareInput } from '../intake/infer'
+import {
+  combineCareFiles,
+  detectCareInputFormat,
+  parseCareInputFormat,
+  prepareCareArtifactText,
+  readCareInputFiles,
+  sampleCareArtifact,
+  type CareInputFormat,
+} from '../intake/inputFiles'
 import type { IntakeCandidate, IntakeResult, IntakeWarning } from '../intake/types'
+import { useAppSettings, type AppSettings } from '../settings/settings'
+import { buildStateFile, parseStateFile } from '../storage/stateFile'
+import { copyTextToClipboard, readTextFromClipboard } from '../../shared/clipboard'
 import { downloadText } from '../../shared/download'
+import { createArtifactShareUrl, readArtifactFromHash } from '../../shared/shareLink'
 import { useLatestCommit } from '../../shared/useLatestCommit'
 import {
   careLoad,
@@ -42,8 +58,8 @@ import {
   upcomingDoses,
 } from './planner'
 import { useCarePlan } from './useCarePlan'
-import type { CarePlan, CorrespondenceTopic } from './types'
-import { newId } from './types'
+import { correspondenceTopicSchema, newId } from './types'
+import type { CarePlan } from './types'
 
 type WorkspaceProps = {
   version: string
@@ -51,7 +67,8 @@ type WorkspaceProps = {
 }
 
 type PlanUpdater = (recipe: (draft: CarePlan) => void) => void
-type Tab = 'dashboard' | 'medications' | 'appointments' | 'correspondence' | 'packet' | 'family'
+type PlanReplacer = (nextPlan: CarePlan) => void
+type Tab = 'dashboard' | 'medications' | 'appointments' | 'correspondence' | 'packet' | 'family' | 'settings'
 
 const repoUrl = 'https://github.com/baditaflorin/elder-care-coordinator'
 const paypalUrl = 'https://www.paypal.com/paypalme/florinbadita'
@@ -63,10 +80,12 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'correspondence', label: 'Letters' },
   { id: 'packet', label: 'Packet' },
   { id: 'family', label: 'Family' },
+  { id: 'settings', label: 'Settings' },
 ]
 
 export function CareWorkspace({ version, commit }: WorkspaceProps) {
-  const { error, lastSavedAt, loadState, plan, reset, setError, updatePlan } = useCarePlan()
+  const { error, lastSavedAt, loadState, plan, replacePlan, reset, setError, updatePlan } = useCarePlan()
+  const { resetSettings, settings, updateSettings } = useAppSettings()
   const displayCommit = useLatestCommit(commit)
   const [tab, setTab] = useState<Tab>('dashboard')
   const load = useMemo(() => careLoad(plan), [plan])
@@ -143,16 +162,37 @@ export function CareWorkspace({ version, commit }: WorkspaceProps) {
           </nav>
 
           <section className="workspace-panel">
-            {tab === 'dashboard' ? <Dashboard plan={plan} doses={doses} updatePlan={updatePlan} /> : null}
+            {tab === 'dashboard' ? (
+              <Dashboard plan={plan} doses={doses} settings={settings} updatePlan={updatePlan} />
+            ) : null}
             {tab === 'medications' ? <MedicationsPanel plan={plan} updatePlan={updatePlan} /> : null}
             {tab === 'appointments' ? <AppointmentsPanel plan={plan} updatePlan={updatePlan} /> : null}
             {tab === 'correspondence' ? (
               <CorrespondencePanel plan={plan} setError={setError} updatePlan={updatePlan} />
             ) : null}
             {tab === 'packet' ? (
-              <PacketPanel commit={displayCommit} plan={plan} setError={setError} version={version} />
+              <PacketPanel
+                commit={displayCommit}
+                plan={plan}
+                setError={setError}
+                settings={settings}
+                version={version}
+              />
             ) : null}
             {tab === 'family' ? <FamilyPanel plan={plan} reset={reset} updatePlan={updatePlan} /> : null}
+            {tab === 'settings' ? (
+              <SettingsPanel
+                commit={displayCommit}
+                plan={plan}
+                replacePlan={replacePlan}
+                reset={reset}
+                resetSettings={resetSettings}
+                setError={setError}
+                settings={settings}
+                updateSettings={updateSettings}
+                version={version}
+              />
+            ) : null}
           </section>
         </div>
       </div>
@@ -163,10 +203,12 @@ export function CareWorkspace({ version, commit }: WorkspaceProps) {
 function Dashboard({
   doses,
   plan,
+  settings,
   updatePlan,
 }: {
   doses: ReturnType<typeof upcomingDoses>
   plan: CarePlan
+  settings: AppSettings
   updatePlan: PlanUpdater
 }) {
   const [report, setReport] = useState<LocalReport | null>(null)
@@ -183,7 +225,7 @@ function Dashboard({
 
   return (
     <div className="panel-grid">
-      <IntakePanel updatePlan={updatePlan} />
+      <IntakePanel settings={settings} updatePlan={updatePlan} />
 
       <section className="section-block span-7">
         <SectionTitle icon={<Pill size={20} />} title="Medication Handoff" />
@@ -279,14 +321,18 @@ function Dashboard({
   )
 }
 
-function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
-  const [input, setInput] = useState('')
+function IntakePanel({ settings, updatePlan }: { settings: AppSettings; updatePlan: PlanUpdater }) {
+  const initialSharedArtifact = useMemo(() => readArtifactFromHash(), [])
+  const [input, setInput] = useState(initialSharedArtifact)
+  const [inputFormat, setInputFormat] = useState<CareInputFormat>('auto')
   const [result, setResult] = useState<IntakeResult | null>(null)
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [status, setStatus] = useState<'idle' | 'analyzing' | 'ready' | 'cancelled' | 'error' | 'applied'>(
     'idle',
   )
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(initialSharedArtifact ? 'Loaded care artifact from this URL.' : '')
+  const [fileMessage, setFileMessage] = useState('')
+  const [shareMessage, setShareMessage] = useState('')
   const controllerRef = useRef<AbortController | null>(null)
   const debug = useMemo(() => new URLSearchParams(window.location.search).has('debug'), [])
 
@@ -306,12 +352,14 @@ function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
     const startedAt = performance.now()
 
     try {
-      const next = await analyzeCareInput(input, controller.signal)
+      const reviewText = prepareCareArtifactText(input, inputFormat)
+      const next = await analyzeCareInput(reviewText, controller.signal)
       if (controller.signal.aborted) return
       const defaults = Object.fromEntries(
         next.candidates.map((candidate) => [
           candidate.id,
-          candidate.confidenceLevel !== 'low' &&
+          settings.autoSelectReviewCandidates &&
+            candidate.confidenceLevel !== 'low' &&
             !candidate.warnings.some((warning) => warning.severity === 'needs_clarification'),
         ]),
       )
@@ -338,6 +386,72 @@ function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
     }
   }
 
+  async function loadFiles(files: FileList | File[]) {
+    try {
+      const readFiles = await readCareInputFiles(files)
+      if (!readFiles.length) return
+      const stateFile = readFiles.find((file) => file.format === 'state')
+      if (stateFile) {
+        setStatus('error')
+        setMessage(
+          'This looks like a workspace state file. Import it from Settings, not Care Artifact Review.',
+        )
+        return
+      }
+      setInput(combineCareFiles(readFiles))
+      setInputFormat('text')
+      setFileMessage(
+        `Loaded ${readFiles.length} file${readFiles.length === 1 ? '' : 's'}: ${readFiles
+          .map((file) => `${file.name} (${file.format})`)
+          .join(', ')}.`,
+      )
+      setResult(null)
+      setStatus('idle')
+    } catch (caught) {
+      setStatus('error')
+      setMessage(caught instanceof Error ? caught.message : 'Could not read those files.')
+    }
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      const text = await readTextFromClipboard()
+      const detected = detectCareInputFormat('', text)
+      setInput(text)
+      setInputFormat(detected === 'state' || detected === 'url' ? 'auto' : detected)
+      setMessage('Loaded care artifact from clipboard.')
+      setStatus('idle')
+    } catch (caught) {
+      setStatus('error')
+      setMessage(
+        caught instanceof Error ? caught.message : 'Clipboard read failed. Use the paste box instead.',
+      )
+    }
+  }
+
+  async function copyShareLink() {
+    try {
+      const url = createArtifactShareUrl(input)
+      await copyTextToClipboard(url)
+      setShareMessage('Copied small artifact link.')
+    } catch (caught) {
+      setShareMessage(caught instanceof Error ? caught.message : 'Could not create a share link.')
+    }
+  }
+
+  function loadSample() {
+    setInput(sampleCareArtifact)
+    setInputFormat('text')
+    setResult(null)
+    setStatus('idle')
+    setMessage('Loaded a sample transition-of-care artifact.')
+  }
+
+  function onDrop(event: DragEvent<HTMLElement>) {
+    event.preventDefault()
+    void loadFiles(event.dataTransfer.files)
+  }
+
   function cancelAnalysis() {
     controllerRef.current?.abort()
     setStatus('cancelled')
@@ -355,7 +469,10 @@ function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
     }
 
     updatePlan((draft) => {
-      Object.assign(draft, applyIntakeResult(draft, result, ids))
+      Object.assign(
+        draft,
+        applyIntakeResult(draft, result, ids, { defaultCaregiverId: settings.defaultCaregiverId }),
+      )
     })
     setStatus('applied')
     setMessage(`Applied ${ids.length} candidate${ids.length === 1 ? '' : 's'} to the local care plan.`)
@@ -368,6 +485,45 @@ function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
       <SectionTitle icon={<ClipboardCheck size={20} />} title="Care Artifact Review" />
       <div className="intake-layout">
         <div>
+          <div className="drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
+            <FolderOpen size={18} />
+            <span>Drop text, CSV, HTML, Markdown, or JSON care files here</span>
+          </div>
+          <div className="button-row input-actions">
+            <label className="secondary-action file-button">
+              <FolderOpen size={18} />
+              Choose files
+              <input
+                multiple
+                accept=".txt,.csv,.html,.htm,.md,.markdown,.json,text/*,application/json"
+                type="file"
+                onChange={(event) => event.target.files && void loadFiles(event.target.files)}
+              />
+            </label>
+            <button className="secondary-action" type="button" onClick={pasteFromClipboard}>
+              <ClipboardCheck size={18} />
+              Read clipboard
+            </button>
+            <button className="secondary-action" type="button" onClick={loadSample}>
+              <Sparkles size={18} />
+              Load sample
+            </button>
+          </div>
+          {fileMessage ? <p className="module-status">{fileMessage}</p> : null}
+          <label className="field">
+            <span>Input format</span>
+            <select
+              value={inputFormat}
+              onChange={(event) => setInputFormat(parseCareInputFormat(event.target.value))}
+            >
+              <option value="auto">Auto detect</option>
+              <option value="text">Plain text</option>
+              <option value="html">HTML text</option>
+              <option value="csv">CSV text</option>
+              <option value="json">JSON care text</option>
+              <option value="markdown">Markdown</option>
+            </select>
+          </label>
           <label className="field">
             <span>Care artifact</span>
             <textarea
@@ -387,8 +543,17 @@ function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
                 Cancel
               </button>
             ) : null}
+            <button className="secondary-action" type="button" onClick={copyShareLink}>
+              <Download size={18} />
+              Copy small link
+            </button>
           </div>
           {message ? <p className={`intake-status ${status}`}>{message}</p> : null}
+          {shareMessage ? <p className="module-status">{shareMessage}</p> : null}
+          <p className="inline-help">
+            Private portal URLs cannot be fetched from GitHub Pages. Open the portal, then paste the rendered
+            text or upload a downloaded file.
+          </p>
         </div>
 
         <div className="intake-results" aria-live="polite">
@@ -800,6 +965,15 @@ function CorrespondencePanel({
     }
   }
 
+  async function copyDraft() {
+    try {
+      await copyTextToClipboard(active.draft)
+      setProgress('Copied draft to clipboard.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to copy draft.')
+    }
+  }
+
   return (
     <div className="panel-grid">
       <section className="section-block span-5">
@@ -808,9 +982,10 @@ function CorrespondencePanel({
           <span>Topic</span>
           <select
             value={current.topic}
-            onChange={(event) =>
-              updateCurrent((item) => (item.topic = event.target.value as CorrespondenceTopic))
-            }
+            onChange={(event) => {
+              const parsed = correspondenceTopicSchema.safeParse(event.target.value)
+              if (parsed.success) updateCurrent((item) => (item.topic = parsed.data))
+            }}
           >
             <option value="coverage_appeal">Coverage appeal</option>
             <option value="prior_authorization">Prior authorization</option>
@@ -869,6 +1044,10 @@ function CorrespondencePanel({
             <Download size={18} />
             Download
           </button>
+          <button className="secondary-action" type="button" onClick={copyDraft}>
+            <ClipboardCheck size={18} />
+            Copy
+          </button>
         </div>
         {progress ? <p className="module-status">{progress}</p> : null}
       </section>
@@ -880,17 +1059,28 @@ function PacketPanel({
   commit,
   plan,
   setError,
+  settings,
   version,
 }: {
   commit: string
   plan: CarePlan
   setError: (message: string) => void
+  settings: AppSettings
   version: string
 }) {
-  const markdown = useMemo(() => emergencyPacketMarkdown(plan, { commit, version }), [commit, plan, version])
+  const markdown = useMemo(
+    () =>
+      emergencyPacketMarkdown(plan, {
+        commit,
+        includeProvenance: settings.includeProvenanceInPacket,
+        version,
+      }),
+    [commit, plan, settings.includeProvenanceInPacket, version],
+  )
   const [passphrase, setPassphrase] = useState('')
   const [cryptoStatus, setCryptoStatus] = useState('')
   const [agePair, setAgePair] = useState<{ identity: string; recipient: string } | null>(null)
+  const [packetStatus, setPacketStatus] = useState('')
 
   async function downloadPandocHtml() {
     try {
@@ -923,6 +1113,30 @@ function PacketPanel({
     }
   }
 
+  async function copyPacket() {
+    try {
+      await copyTextToClipboard(markdown)
+      setPacketStatus('Copied packet Markdown to clipboard.')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to copy packet.')
+    }
+  }
+
+  function printPacket() {
+    const blob = new Blob([packetHtmlFromMarkdown(markdown)], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const popup = window.open(url, '_blank', 'noopener,noreferrer')
+    if (!popup) {
+      URL.revokeObjectURL(url)
+      setError('The print window was blocked. Allow pop-ups for this site or download the HTML packet.')
+      return
+    }
+    window.setTimeout(() => {
+      popup.print()
+      URL.revokeObjectURL(url)
+    }, 400)
+  }
+
   return (
     <div className="panel-grid">
       <section className="section-block span-7">
@@ -941,7 +1155,15 @@ function PacketPanel({
         </button>
         <button className="wide-action" type="button" onClick={downloadPandocHtml}>
           <FileText size={18} />
-          HTML via Pandoc
+          HTML export
+        </button>
+        <button className="wide-action" type="button" onClick={copyPacket}>
+          <ClipboardCheck size={18} />
+          Copy packet
+        </button>
+        <button className="wide-action" type="button" onClick={printPacket}>
+          <Printer size={18} />
+          Print packet
         </button>
         <label className="field">
           <span>Passphrase</span>
@@ -955,6 +1177,7 @@ function PacketPanel({
           <RefreshCw size={18} />
           Generate age recipient
         </button>
+        {packetStatus ? <p className="module-status">{packetStatus}</p> : null}
         {cryptoStatus ? <p className="module-status">{cryptoStatus}</p> : null}
         {agePair ? (
           <div className="key-box">
@@ -1052,6 +1275,143 @@ function FamilyPanel({
             </div>
           ))}
         </div>
+      </section>
+    </div>
+  )
+}
+
+function SettingsPanel({
+  commit,
+  plan,
+  replacePlan,
+  reset,
+  resetSettings,
+  setError,
+  settings,
+  updateSettings,
+  version,
+}: {
+  commit: string
+  plan: CarePlan
+  replacePlan: PlanReplacer
+  reset: () => Promise<void>
+  resetSettings: () => void
+  setError: (message: string) => void
+  settings: AppSettings
+  updateSettings: (recipe: (draft: AppSettings) => void) => void
+  version: string
+}) {
+  const [status, setStatus] = useState('')
+
+  function exportState() {
+    const state = buildStateFile(plan, settings, { commit, version })
+    downloadText(
+      `elder-care-workspace-${new Date().toISOString().slice(0, 10)}.json`,
+      state,
+      'application/json',
+    )
+    setStatus('Downloaded workspace state file.')
+  }
+
+  async function importState(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    try {
+      const parsed = parseStateFile(await file.text())
+      replacePlan(parsed.carePlan)
+      updateSettings((draft) => {
+        Object.assign(draft, parsed.settings)
+      })
+      setStatus(`Imported workspace from ${file.name}.`)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to import workspace state.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  async function resetWorkspace() {
+    await reset()
+    setStatus('Reset local workspace to the sample care plan.')
+  }
+
+  function resetAllSettings() {
+    resetSettings()
+    setStatus('Reset settings for this browser.')
+  }
+
+  return (
+    <div className="panel-grid">
+      <section className="section-block span-6">
+        <SectionTitle icon={<Settings size={20} />} title="Settings" />
+        <label className="toggle-row">
+          <input
+            checked={settings.autoSelectReviewCandidates}
+            type="checkbox"
+            onChange={(event) =>
+              updateSettings((draft) => {
+                draft.autoSelectReviewCandidates = event.target.checked
+              })
+            }
+          />
+          <span>Auto-select high-confidence review candidates</span>
+        </label>
+        <label className="toggle-row">
+          <input
+            checked={settings.includeProvenanceInPacket}
+            type="checkbox"
+            onChange={(event) =>
+              updateSettings((draft) => {
+                draft.includeProvenanceInPacket = event.target.checked
+              })
+            }
+          />
+          <span>Include activity provenance in emergency packets</span>
+        </label>
+        <label className="field">
+          <span>Default caregiver for imported tasks</span>
+          <select
+            value={settings.defaultCaregiverId}
+            onChange={(event) =>
+              updateSettings((draft) => {
+                draft.defaultCaregiverId = event.target.value
+              })
+            }
+          >
+            <option value="">First caregiver in plan</option>
+            {plan.caregivers.map((caregiver) => (
+              <option key={caregiver.id} value={caregiver.id}>
+                {caregiver.name} ({caregiver.role})
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="secondary-action full" type="button" onClick={resetAllSettings}>
+          <RefreshCw size={18} />
+          Reset settings
+        </button>
+      </section>
+
+      <section className="section-block span-6">
+        <SectionTitle icon={<Download size={20} />} title="Workspace Backup" />
+        <button className="wide-action" type="button" onClick={exportState}>
+          <Download size={18} />
+          Export workspace JSON
+        </button>
+        <label className="file-input">
+          <FolderOpen size={18} />
+          Import workspace JSON
+          <input accept="application/json,.json" type="file" onChange={importState} />
+        </label>
+        <button className="secondary-action full" type="button" onClick={() => void resetWorkspace()}>
+          <RefreshCw size={18} />
+          Reset workspace to sample
+        </button>
+        <p className="inline-help">
+          Workspace exports include the care plan and browser settings. Keep the file private; it may contain
+          sensitive care details.
+        </p>
+        {status ? <p className="module-status">{status}</p> : null}
       </section>
     </div>
   )

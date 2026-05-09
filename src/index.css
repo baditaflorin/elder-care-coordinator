@@ -441,6 +441,71 @@ button:disabled {
   position: absolute;
 }
 
+.file-button {
+  overflow: hidden;
+  position: relative;
+}
+
+.file-button input {
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.drop-zone {
+  align-items: center;
+  background: rgb(240 253 250);
+  border: 1px dashed rgb(20 184 166);
+  border-radius: 8px;
+  color: rgb(15 118 110);
+  display: flex;
+  gap: 0.55rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  min-height: 4rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.input-actions {
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.input-actions .secondary-action {
+  justify-content: center;
+}
+
+.inline-help {
+  color: rgb(71 85 105);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0.65rem 0 0;
+}
+
+.toggle-row {
+  align-items: flex-start;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+  padding: 0.7rem;
+}
+
+.toggle-row input {
+  height: 1rem;
+  margin-top: 0.2rem;
+  width: 1rem;
+}
+
+.toggle-row span {
+  color: rgb(15 23 42);
+  font-weight: 750;
+}
+
 .module-status {
   background: rgb(240 253 250);
   border: 1px solid rgb(153 246 228);

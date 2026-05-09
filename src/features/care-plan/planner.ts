@@ -11,6 +11,7 @@ export type DueDose = {
 
 type PacketMetadata = {
   commit?: string
+  includeProvenance?: boolean
   version?: string
 }
 
@@ -119,6 +120,14 @@ export function emergencyPacketMarkdown(plan: CarePlan, metadata: PacketMetadata
       .slice(0, 5)
       .map((entry) => `- ${entry.at}: ${entry.summary} Source: ${entry.sourceId}`)
       .join('\n') || '- No intake activity recorded.'
+  const provenanceSection =
+    metadata.includeProvenance === false
+      ? ''
+      : `
+## Provenance
+
+${provenance}
+`
 
   return `# Emergency Packet: ${plan.recipient.name}
 
@@ -154,10 +163,7 @@ ${caregivers}
 
 ${appointments}
 
-## Provenance
-
-${provenance}
-
+${provenanceSection}
 ## Emergency Instructions
 
 ${plan.emergencyInstructions}

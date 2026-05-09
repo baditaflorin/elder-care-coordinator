@@ -49,6 +49,10 @@ export function useCarePlan() {
     })
   }, [])
 
+  const replacePlan = useCallback((nextPlan: CarePlan) => {
+    setPlan(carePlanSchema.parse({ ...nextPlan, updatedAt: new Date().toISOString() }))
+  }, [])
+
   const reset = useCallback(async () => {
     await clearCarePlan()
     setPlan(sampleCarePlan)
@@ -56,7 +60,7 @@ export function useCarePlan() {
   }, [])
 
   return useMemo(
-    () => ({ error, lastSavedAt, loadState, plan, reset, setError, updatePlan }),
-    [error, lastSavedAt, loadState, plan, reset, updatePlan],
+    () => ({ error, lastSavedAt, loadState, plan, replacePlan, reset, setError, updatePlan }),
+    [error, lastSavedAt, loadState, plan, replacePlan, reset, updatePlan],
   )
 }

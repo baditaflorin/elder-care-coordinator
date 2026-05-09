@@ -1,5 +1,28 @@
 export type CareInputFormat = 'auto' | 'csv' | 'html' | 'json' | 'markdown' | 'state' | 'text' | 'url'
 
+export const selectableCareInputFormats: CareInputFormat[] = [
+  'auto',
+  'csv',
+  'html',
+  'json',
+  'markdown',
+  'text',
+]
+
+export function parseCareInputFormat(value: string): CareInputFormat {
+  switch (value) {
+    case 'auto':
+    case 'csv':
+    case 'html':
+    case 'json':
+    case 'markdown':
+    case 'text':
+      return value
+    default:
+      return 'auto'
+  }
+}
+
 export type ReadCareFile = {
   format: CareInputFormat
   name: string

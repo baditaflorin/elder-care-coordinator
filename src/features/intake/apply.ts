@@ -1,13 +1,22 @@
 import type { CarePlan } from '../care-plan/types'
 import type { IntakeCandidate, IntakeResult } from './types'
 
-export function applyIntakeResult(plan: CarePlan, result: IntakeResult, candidateIds: string[]) {
+type ApplyIntakeOptions = {
+  defaultCaregiverId?: string
+}
+
+export function applyIntakeResult(
+  plan: CarePlan,
+  result: IntakeResult,
+  candidateIds: string[],
+  options: ApplyIntakeOptions = {},
+) {
   const selected = new Set(candidateIds)
   const draft = structuredClone(plan)
   const now = new Date().toISOString()
 
   for (const candidate of result.candidates.filter((item) => selected.has(item.id))) {
-    applyCandidate(draft, candidate, now, result.sourceHash)
+    applyCandidate(draft, candidate, now, result.sourceHash, options)
   }
 
   draft.updatedAt = now
@@ -22,7 +31,15 @@ export function applyIntakeResult(plan: CarePlan, result: IntakeResult, candidat
   return draft
 }
 
-function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string, sourceHash: string) {
+function applyCandidate(
+  plan: CarePlan,
+  candidate: IntakeCandidate,
+  now: string,
+  sourceHash: string,
+  options: ApplyIntakeOptions,
+) {
+  const ownerId = options.defaultCaregiverId || plan.caregivers[0]?.id || ''
+
   if (candidate.type === 'medication') {
     const action = String(candidate.fields.action ?? '')
     if (action === 'stop') return
@@ -53,7 +70,7 @@ function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string,
       location: String(candidate.fields.location ?? ''),
       preparation: String(candidate.fields.preparation ?? candidate.sourceText),
       reason: String(candidate.fields.reason ?? candidate.title),
-      transportOwnerId: plan.caregivers[0]?.id ?? '',
+      transportOwnerId: ownerId,
     })
   }
 
@@ -74,7 +91,7 @@ function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string,
     plan.tasks.push({
       id: candidate.id,
       dueDate: String(candidate.fields.dueDate ?? '') || now.slice(0, 10),
-      ownerId: plan.caregivers[0]?.id ?? '',
+      ownerId,
       status: 'open',
       title: String(candidate.fields.title ?? candidate.title),
     })
@@ -84,7 +101,7 @@ function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string,
     if (plan.notes.some((note) => note.id === candidate.id)) return
     plan.notes.unshift({
       id: candidate.id,
-      authorId: plan.caregivers[0]?.id ?? '',
+      authorId: ownerId,
       body: String(candidate.fields.body ?? candidate.sourceText),
       createdAt: now,
     })
@@ -95,11 +112,11 @@ function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string,
     const medication = plan.medications.find((item) => item.name.toLowerCase() === medicationName)
     if (medication && candidate.fields.status === 'taken') {
       medication.lastConfirmedAt = now
-      medication.confirmedBy = plan.caregivers[0]?.id
+      medication.confirmedBy = ownerId
     } else {
       plan.notes.unshift({
         id: `note_${sourceHash}_${candidate.id}`,
-        authorId: plan.caregivers[0]?.id ?? '',
+        authorId: ownerId,
         body: candidate.sourceText,
         createdAt: now,
       })
