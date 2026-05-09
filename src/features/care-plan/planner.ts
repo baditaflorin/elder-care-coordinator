@@ -9,6 +9,11 @@ export type DueDose = {
   status: 'confirmed' | 'due' | 'upcoming'
 }
 
+type PacketMetadata = {
+  commit?: string
+  version?: string
+}
+
 const topicLabels: Record<CorrespondenceTopic, string> = {
   billing_dispute: 'billing dispute',
   care_summary: 'care summary',
@@ -89,7 +94,7 @@ export function buildInsuranceDraft(plan: CarePlan, topic: CorrespondenceTopic, 
   ].join('\n')
 }
 
-export function emergencyPacketMarkdown(plan: CarePlan) {
+export function emergencyPacketMarkdown(plan: CarePlan, metadata: PacketMetadata = {}) {
   const meds = plan.medications
     .map(
       (medication) =>
@@ -109,10 +114,19 @@ export function emergencyPacketMarkdown(plan: CarePlan) {
         `- ${formatDateTime(appointment.dateTime)}: ${appointment.clinician}, ${appointment.reason}. ${appointment.location}`,
     )
     .join('\n')
+  const provenance =
+    plan.activityLog
+      .slice(0, 5)
+      .map((entry) => `- ${entry.at}: ${entry.summary} Source: ${entry.sourceId}`)
+      .join('\n') || '- No intake activity recorded.'
 
   return `# Emergency Packet: ${plan.recipient.name}
 
 Generated: ${new Date().toLocaleString()}
+App version: ${metadata.version ?? 'unknown'}
+App commit: ${metadata.commit ?? 'unknown'}
+Care schema: ${plan.schemaVersion}
+Care plan updated: ${plan.updatedAt}
 
 ## Identity
 
@@ -139,6 +153,10 @@ ${caregivers}
 ## Upcoming Appointments
 
 ${appointments}
+
+## Provenance
+
+${provenance}
 
 ## Emergency Instructions
 

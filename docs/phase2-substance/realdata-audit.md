@@ -2,7 +2,7 @@
 
 Date: 2026-05-08
 
-Scope: §0 only. No ADRs, picklist, fixtures, or code changes yet.
+Scope: §0 baseline plus Phase 2 completion evidence.
 
 Live v1 audited: https://baditaflorin.github.io/elder-care-coordinator/
 
@@ -24,6 +24,27 @@ These are real-world caregiver-style inputs selected as the Phase 2 grading rubr
 | 8   | Prior authorization denial appeal template for medication/service                                             | https://www.patientadvocate.org/download-view/sample-appeal-letter-for-pre-authorization-denial/                                                                  | Mildly messy                         | User can paste facts, but the app does not distinguish medication, service, denial date, reference number, or urgency.                | Extract PA denial fields and generate a structured draft plus missing-field warnings.                                     | Wrong-but-confident draft                                  | Map denial letter to administrative fields manually.                    |
 | 9   | Appointment reminder email / ICS style healthcare reminder                                                    | https://help.icehealthsystems.com/schedule/send-appointment-reminders                                                                                             | Mildly messy                         | User must manually add clinician, date, location, prep, and follow-up. Time zones are not explained.                                  | Parse date/time/location from pasted email or ICS, preserve timezone/source, create appointment guess.                    | Obvious manual work; possible timezone error               | Copy appointment fields one by one.                                     |
 | 10  | WhatsApp-style family medication reminder / response thread                                                   | https://www.parwah.co/                                                                                                                                            | Genuinely messy partial conversation | User can only add a note manually; no extraction of “taken,” missed response, task owner, or med status.                              | Parse caregiver messages into note/task/med confirmation candidates with confidence and timestamps.                       | Silent loss of structured action                           | Translate chat into confirmations, tasks, and notes.                    |
+
+## After Implementation
+
+Fixture suite: `src/features/intake/infer.test.ts`
+
+Command: `npx vitest run src/features/intake/infer.test.ts --reporter=verbose`
+
+Result on 2026-05-09: 10/10 real-data fixtures pass, plus empty, huge, and encoding-weird synthetic edge cases.
+
+| #   | After behavior                                                                                               | Pass |
+| --- | ------------------------------------------------------------------------------------------------------------ | ---- |
+| 1   | Detects medication-list rows and extracts Metformin, Lisinopril, and Apixaban candidates.                    | yes  |
+| 2   | Detects transition-of-care context, extracts home/start/stop/continue meds, and warns on stopped meds.       | yes  |
+| 3   | Detects discharge reconciliation, flags changed Lisinopril dose and discontinued meds.                       | yes  |
+| 4   | Parses prescription sig into a medication candidate and maps twice-daily directions to default review times. | yes  |
+| 5   | Detects prescription label shape and marks conflicting Gabapentin directions as ambiguous.                   | yes  |
+| 6   | Extracts MSN/denial reference, denied service, appeal deadline, and correspondence draft facts.              | yes  |
+| 7   | Classifies prior-authorization denial and creates a supporting-document task.                                | yes  |
+| 8   | Extracts PA reference, medication/service, step therapy reason, draft, and supporting-document task.         | yes  |
+| 9   | Extracts appointment reminder date/time, clinician, location, preparation, and timezone warning.             | yes  |
+| 10  | Extracts family-chat notes, tasks, med confirmation, and appointment handoff candidates.                     | yes  |
 
 ## Top 5 Logic Gaps
 

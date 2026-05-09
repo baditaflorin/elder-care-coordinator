@@ -732,6 +732,10 @@ button:disabled {
   min-height: 8rem;
 }
 
+.activity-log {
+  margin-top: 1rem;
+}
+
 @media (max-width: 920px) {
   .patient-strip,
   .workspace-shell,

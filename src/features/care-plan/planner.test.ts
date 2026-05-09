@@ -26,10 +26,12 @@ describe('care planner', () => {
   })
 
   it('creates an emergency packet with medications and contacts', () => {
-    const packet = emergencyPacketMarkdown(sampleCarePlan)
+    const packet = emergencyPacketMarkdown(sampleCarePlan, { commit: 'abc1234', version: '0.2.0' })
 
     expect(packet).toContain('Metformin')
     expect(packet).toContain('Ana')
     expect(packet).toContain(sampleCarePlan.recipient.allergies)
+    expect(packet).toContain('App version: 0.2.0')
+    expect(packet).toContain('App commit: abc1234')
   })
 })

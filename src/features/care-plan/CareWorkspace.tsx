@@ -149,7 +149,9 @@ export function CareWorkspace({ version, commit }: WorkspaceProps) {
             {tab === 'correspondence' ? (
               <CorrespondencePanel plan={plan} setError={setError} updatePlan={updatePlan} />
             ) : null}
-            {tab === 'packet' ? <PacketPanel plan={plan} setError={setError} /> : null}
+            {tab === 'packet' ? (
+              <PacketPanel commit={displayCommit} plan={plan} setError={setError} version={version} />
+            ) : null}
             {tab === 'family' ? <FamilyPanel plan={plan} reset={reset} updatePlan={updatePlan} /> : null}
           </section>
         </div>
@@ -874,8 +876,18 @@ function CorrespondencePanel({
   )
 }
 
-function PacketPanel({ plan, setError }: { plan: CarePlan; setError: (message: string) => void }) {
-  const markdown = useMemo(() => emergencyPacketMarkdown(plan), [plan])
+function PacketPanel({
+  commit,
+  plan,
+  setError,
+  version,
+}: {
+  commit: string
+  plan: CarePlan
+  setError: (message: string) => void
+  version: string
+}) {
+  const markdown = useMemo(() => emergencyPacketMarkdown(plan, { commit, version }), [commit, plan, version])
   const [passphrase, setPassphrase] = useState('')
   const [cryptoStatus, setCryptoStatus] = useState('')
   const [agePair, setAgePair] = useState<{ identity: string; recipient: string } | null>(null)
@@ -995,6 +1007,24 @@ function FamilyPanel({
               </p>
             </div>
           ))}
+        </div>
+        <div className="activity-log">
+          <SectionTitle icon={<ClipboardCheck size={20} />} title="Activity Log" />
+          <div className="stack">
+            {plan.activityLog.slice(0, 5).map((entry) => (
+              <div className="compact-card" key={entry.id}>
+                <strong>{entry.summary}</strong>
+                <span>{formatDateTime(entry.at)}</span>
+                <p>Source {entry.sourceId}</p>
+              </div>
+            ))}
+            {plan.activityLog.length === 0 ? (
+              <div className="empty-state">
+                <Info size={18} />
+                <span>No intake activity yet</span>
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
       <section className="section-block span-7">
