@@ -253,6 +253,10 @@ button:disabled {
   grid-column: span 7;
 }
 
+.span-12 {
+  grid-column: span 12;
+}
+
 .section-block {
   background: white;
   border: 1px solid rgb(203 213 225);
@@ -498,16 +502,248 @@ button:disabled {
   margin: 0;
 }
 
+.intake-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+}
+
+.intake-textarea {
+  min-height: 14rem;
+}
+
+.intake-results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.intake-summary {
+  align-items: center;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+}
+
+.intake-summary span,
+.candidate-type,
+.candidate-debug {
+  color: rgb(71 85 105);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.intake-summary strong {
+  display: block;
+  text-transform: capitalize;
+}
+
+.intake-status {
+  border-radius: 8px;
+  font-size: 0.86rem;
+  margin: 0.75rem 0 0;
+  padding: 0.7rem;
+}
+
+.intake-status.ready,
+.intake-status.applied {
+  background: rgb(240 253 250);
+  border: 1px solid rgb(153 246 228);
+  color: rgb(15 118 110);
+}
+
+.intake-status.analyzing,
+.intake-status.cancelled {
+  background: rgb(255 251 235);
+  border: 1px solid rgb(253 230 138);
+  color: rgb(146 64 14);
+}
+
+.intake-status.error {
+  background: rgb(254 242 242);
+  border: 1px solid rgb(254 202 202);
+  color: rgb(127 29 29);
+}
+
+.confidence-badge {
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 850;
+  padding: 0.25rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.confidence-badge.high {
+  background: rgb(220 252 231);
+  color: rgb(22 101 52);
+}
+
+.confidence-badge.medium {
+  background: rgb(254 243 199);
+  color: rgb(146 64 14);
+}
+
+.confidence-badge.low {
+  background: rgb(254 226 226);
+  color: rgb(153 27 27);
+}
+
+.warning-list,
+.candidate-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.warning-item {
+  align-items: flex-start;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.65rem;
+}
+
+.warning-item.warning,
+.warning-item.info {
+  background: rgb(255 251 235);
+  color: rgb(146 64 14);
+}
+
+.warning-item.needs_clarification,
+.warning-item.error {
+  background: rgb(254 242 242);
+  color: rgb(127 29 29);
+}
+
+.warning-item strong,
+.warning-item span {
+  display: block;
+}
+
+.warning-item strong {
+  font-size: 0.85rem;
+}
+
+.warning-item span {
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.candidate-card,
+.empty-state {
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.candidate-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.candidate-check {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.candidate-check input {
+  flex: 0 0 auto;
+  height: 1rem;
+  margin-top: 0.2rem;
+  width: 1rem;
+}
+
+.candidate-check span {
+  font-weight: 850;
+}
+
+.candidate-type,
+.candidate-debug {
+  margin: 0.3rem 0 0;
+  text-transform: capitalize;
+}
+
+.candidate-fields {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0.75rem 0;
+}
+
+.candidate-fields div {
+  background: white;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 0.55rem;
+}
+
+.candidate-fields dt {
+  color: rgb(71 85 105);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.candidate-fields dd {
+  color: rgb(15 23 42);
+  font-size: 0.84rem;
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.decision-details {
+  margin-top: 0.65rem;
+}
+
+.decision-details summary {
+  color: rgb(15 118 110);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.decision-details ul {
+  color: rgb(51 65 85);
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.debug-box {
+  background: rgb(15 23 42);
+  border-radius: 8px;
+  color: rgb(226 232 240);
+  font-size: 0.78rem;
+  margin: 0;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.empty-state {
+  align-items: center;
+  color: rgb(71 85 105);
+  display: flex;
+  gap: 0.5rem;
+  min-height: 8rem;
+}
+
 @media (max-width: 920px) {
   .patient-strip,
   .workspace-shell,
-  .panel-grid {
+  .panel-grid,
+  .intake-layout {
     grid-template-columns: 1fr;
   }
 
   .span-5,
   .span-6,
-  .span-7 {
+  .span-7,
+  .span-12 {
     grid-column: 1;
   }
 

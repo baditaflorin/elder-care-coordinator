@@ -38,7 +38,7 @@ function applyCandidate(plan: CarePlan, candidate: IntakeCandidate, now: string,
       name: String(candidate.fields.name ?? candidate.title),
       prescriber: '',
       purpose: String(candidate.fields.purpose ?? ''),
-      refillBy: String(candidate.fields.refillBy ?? ''),
+      refillBy: String(candidate.fields.refillBy ?? '') || now.slice(0, 10),
       times: Array.isArray(candidate.fields.times) ? candidate.fields.times.map(String) : [],
     })
   }

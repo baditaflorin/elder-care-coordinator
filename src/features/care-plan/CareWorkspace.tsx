@@ -1,9 +1,12 @@
 import {
+  AlertTriangle,
   CalendarPlus,
   Check,
+  ClipboardCheck,
   Database,
   Download,
   FileText,
+  Info,
   KeyRound,
   MailPlus,
   Mic,
@@ -14,14 +17,18 @@ import {
   Sparkles,
   Trash2,
   Users,
+  X,
 } from 'lucide-react'
-import { useMemo, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import type { ReactNode } from 'react'
 import { buildLocalReport, type LocalReport } from '../analytics/duckdbReport'
 import { fallbackCorrespondenceDraft, improveDraftWithLocalLlm } from '../assistant/localAssistant'
 import { transcribeCareNote } from '../assistant/whisper'
 import { encryptWithAgePassphrase, generateAgeRecipientPair } from '../crypto/packetCrypto'
 import { renderPacketWithPandoc } from '../export/pandoc'
+import { applyIntakeResult } from '../intake/apply'
+import { analyzeCareInput } from '../intake/infer'
+import type { IntakeCandidate, IntakeResult, IntakeWarning } from '../intake/types'
 import { downloadText } from '../../shared/download'
 import { useLatestCommit } from '../../shared/useLatestCommit'
 import {
@@ -43,6 +50,7 @@ type WorkspaceProps = {
   commit: string
 }
 
+type PlanUpdater = (recipe: (draft: CarePlan) => void) => void
 type Tab = 'dashboard' | 'medications' | 'appointments' | 'correspondence' | 'packet' | 'family'
 
 const repoUrl = 'https://github.com/baditaflorin/elder-care-coordinator'
@@ -157,7 +165,7 @@ function Dashboard({
 }: {
   doses: ReturnType<typeof upcomingDoses>
   plan: CarePlan
-  updatePlan: (recipe: (draft: CarePlan) => void) => void
+  updatePlan: PlanUpdater
 }) {
   const [report, setReport] = useState<LocalReport | null>(null)
   const [busy, setBusy] = useState(false)
@@ -173,6 +181,8 @@ function Dashboard({
 
   return (
     <div className="panel-grid">
+      <IntakePanel updatePlan={updatePlan} />
+
       <section className="section-block span-7">
         <SectionTitle icon={<Pill size={20} />} title="Medication Handoff" />
         <div className="stack">
@@ -267,13 +277,262 @@ function Dashboard({
   )
 }
 
-function MedicationsPanel({
-  plan,
-  updatePlan,
+function IntakePanel({ updatePlan }: { updatePlan: PlanUpdater }) {
+  const [input, setInput] = useState('')
+  const [result, setResult] = useState<IntakeResult | null>(null)
+  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const [status, setStatus] = useState<'idle' | 'analyzing' | 'ready' | 'cancelled' | 'error' | 'applied'>(
+    'idle',
+  )
+  const [message, setMessage] = useState('')
+  const controllerRef = useRef<AbortController | null>(null)
+  const debug = useMemo(() => new URLSearchParams(window.location.search).has('debug'), [])
+
+  useEffect(
+    () => () => {
+      controllerRef.current?.abort()
+    },
+    [],
+  )
+
+  async function analyze() {
+    controllerRef.current?.abort()
+    const controller = new AbortController()
+    controllerRef.current = controller
+    setStatus('analyzing')
+    setMessage('Reviewing care artifact...')
+    const startedAt = performance.now()
+
+    try {
+      const next = await analyzeCareInput(input, controller.signal)
+      if (controller.signal.aborted) return
+      const defaults = Object.fromEntries(
+        next.candidates.map((candidate) => [
+          candidate.id,
+          candidate.confidenceLevel !== 'low' &&
+            !candidate.warnings.some((warning) => warning.severity === 'needs_clarification'),
+        ]),
+      )
+      setResult(next)
+      setSelected(defaults)
+      setStatus('ready')
+      setMessage(
+        `Detected ${formatShape(next.detectedShape)} with ${next.candidates.length} candidate${
+          next.candidates.length === 1 ? '' : 's'
+        } in ${Math.round(performance.now() - startedAt)}ms.`,
+      )
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === 'AbortError') {
+        setStatus('cancelled')
+        setMessage('Review cancelled. The previous care plan stayed unchanged.')
+        return
+      }
+      setStatus('error')
+      setMessage(
+        caught instanceof Error
+          ? `Could not review this care artifact. ${caught.message}`
+          : 'Could not review this care artifact. Paste a smaller or more complete section.',
+      )
+    }
+  }
+
+  function cancelAnalysis() {
+    controllerRef.current?.abort()
+    setStatus('cancelled')
+    setMessage('Review cancelled. The previous care plan stayed unchanged.')
+  }
+
+  function applySelected() {
+    if (!result) return
+    const ids = Object.entries(selected)
+      .filter(([, checked]) => checked)
+      .map(([id]) => id)
+    if (!ids.length) {
+      setMessage('No candidates selected. Keep at least one checked item to apply.')
+      return
+    }
+
+    updatePlan((draft) => {
+      Object.assign(draft, applyIntakeResult(draft, result, ids))
+    })
+    setStatus('applied')
+    setMessage(`Applied ${ids.length} candidate${ids.length === 1 ? '' : 's'} to the local care plan.`)
+  }
+
+  const selectedCount = Object.values(selected).filter(Boolean).length
+
+  return (
+    <section className="section-block span-12">
+      <SectionTitle icon={<ClipboardCheck size={20} />} title="Care Artifact Review" />
+      <div className="intake-layout">
+        <div>
+          <label className="field">
+            <span>Care artifact</span>
+            <textarea
+              className="intake-textarea"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+            />
+          </label>
+          <div className="button-row">
+            <button className="wide-action" type="button" onClick={analyze} disabled={status === 'analyzing'}>
+              <Sparkles size={18} />
+              {status === 'analyzing' ? 'Reviewing' : 'Review'}
+            </button>
+            {status === 'analyzing' ? (
+              <button className="secondary-action" type="button" onClick={cancelAnalysis}>
+                <X size={18} />
+                Cancel
+              </button>
+            ) : null}
+          </div>
+          {message ? <p className={`intake-status ${status}`}>{message}</p> : null}
+        </div>
+
+        <div className="intake-results" aria-live="polite">
+          {result ? (
+            <>
+              <div className="intake-summary">
+                <div>
+                  <span>Detected shape</span>
+                  <strong>{formatShape(result.detectedShape)}</strong>
+                </div>
+                <ConfidenceBadge confidence={result.confidence} level={result.confidenceLevel} />
+              </div>
+
+              <WarningList warnings={result.warnings} />
+
+              <div className="candidate-list">
+                {result.candidates.map((candidate) => (
+                  <IntakeCandidateCard
+                    candidate={candidate}
+                    checked={Boolean(selected[candidate.id])}
+                    debug={debug}
+                    key={candidate.id}
+                    onCheckedChange={(checked) => setSelected({ ...selected, [candidate.id]: checked })}
+                  />
+                ))}
+              </div>
+
+              <button
+                className="wide-action"
+                type="button"
+                onClick={applySelected}
+                disabled={!selectedCount || status === 'analyzing'}
+              >
+                <Check size={18} />
+                Apply selected
+              </button>
+
+              {debug ? (
+                <pre className="debug-box">
+                  {JSON.stringify(
+                    {
+                      rules: result.debug.rules,
+                      schemaVersion: result.schemaVersion,
+                      sourceBytes: result.sourceBytes,
+                      sourceHash: result.sourceHash,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              ) : null}
+            </>
+          ) : (
+            <div className="empty-state">
+              <Info size={18} />
+              <span>Awaiting care artifact</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function IntakeCandidateCard({
+  candidate,
+  checked,
+  debug,
+  onCheckedChange,
 }: {
-  plan: CarePlan
-  updatePlan: (recipe: (draft: CarePlan) => void) => void
+  candidate: IntakeCandidate
+  checked: boolean
+  debug: boolean
+  onCheckedChange: (checked: boolean) => void
 }) {
+  const fieldEntries = Object.entries(candidate.fields).filter(
+    ([key]) => !['draft', 'instructions'].includes(key),
+  )
+
+  return (
+    <article className="candidate-card">
+      <div className="candidate-header">
+        <label className="candidate-check">
+          <input
+            checked={checked}
+            type="checkbox"
+            onChange={(event) => onCheckedChange(event.target.checked)}
+          />
+          <span>{candidate.title}</span>
+        </label>
+        <ConfidenceBadge confidence={candidate.confidence} level={candidate.confidenceLevel} />
+      </div>
+      <p className="candidate-type">{formatCandidateType(candidate.type)}</p>
+      <dl className="candidate-fields">
+        {fieldEntries.slice(0, 6).map(([key, value]) => (
+          <div key={key}>
+            <dt>{formatFieldName(key)}</dt>
+            <dd>{formatFieldValue(value)}</dd>
+          </div>
+        ))}
+      </dl>
+      <WarningList warnings={candidate.warnings} />
+      <details className="decision-details">
+        <summary>Why</summary>
+        <ul>
+          {candidate.explanation.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </details>
+      {debug ? (
+        <p className="candidate-debug">
+          Source lines {candidate.sourceLines.join(', ')} · {candidate.id}
+        </p>
+      ) : null}
+    </article>
+  )
+}
+
+function WarningList({ warnings }: { warnings: IntakeWarning[] }) {
+  if (!warnings.length) return null
+
+  return (
+    <div className="warning-list">
+      {warnings.map((item) => (
+        <div className={`warning-item ${item.severity}`} key={`${item.code}-${item.message}`}>
+          <AlertTriangle size={16} />
+          <div>
+            <strong>{item.message}</strong>
+            <span>{item.nextStep}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ConfidenceBadge({ confidence, level }: { confidence: number; level: 'high' | 'medium' | 'low' }) {
+  return (
+    <span className={`confidence-badge ${level}`}>
+      {level} {Math.round(confidence * 100)}%
+    </span>
+  )
+}
+
+function MedicationsPanel({ plan, updatePlan }: { plan: CarePlan; updatePlan: PlanUpdater }) {
   const [form, setForm] = useState({
     dose: '',
     instructions: '',
@@ -792,6 +1051,24 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
       <h3>{title}</h3>
     </div>
   )
+}
+
+function formatShape(value: string) {
+  return value.replaceAll('_', ' ')
+}
+
+function formatCandidateType(value: string) {
+  return value.replaceAll('_', ' ')
+}
+
+function formatFieldName(value: string) {
+  return value.replace(/([A-Z])/g, ' $1').replace(/^./, (letter) => letter.toUpperCase())
+}
+
+function formatFieldValue(value: string | string[] | boolean) {
+  if (Array.isArray(value)) return value.join(', ') || 'none'
+  if (typeof value === 'boolean') return value ? 'yes' : 'no'
+  return value || 'none'
 }
 
 function FormField({
