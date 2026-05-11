@@ -33,9 +33,11 @@ export function medicationLabel(medication: Medication) {
 export function upcomingDoses(plan: CarePlan, now = new Date(), hours = 24): DueDose[] {
   const windowEnd = new Date(now.getTime() + hours * 60 * 60 * 1000)
   return plan.medications
+    .filter((medication) => medication.frequency !== 'as_needed')
     .flatMap((medication) =>
-      medication.times.map((time) => {
-        const dateTime = nextDateForTime(time, now)
+      medication.times.flatMap((time) => {
+        const dateTime = nextScheduledDoseFor(medication, time, now)
+        if (!dateTime) return []
         const status =
           medication.lastConfirmedAt && sameLocalDate(new Date(medication.lastConfirmedAt), dateTime)
             ? 'confirmed'
@@ -43,18 +45,54 @@ export function upcomingDoses(plan: CarePlan, now = new Date(), hours = 24): Due
               ? 'due'
               : 'upcoming'
 
-        return {
-          medicationId: medication.id,
-          medicationName: medication.name,
-          dose: medication.dose,
-          time,
-          dateTime: dateTime.toISOString(),
-          status,
-        } satisfies DueDose
+        return [
+          {
+            medicationId: medication.id,
+            medicationName: medication.name,
+            dose: medication.dose,
+            time,
+            dateTime: dateTime.toISOString(),
+            status,
+          } satisfies DueDose,
+        ]
       }),
     )
     .filter((dose) => new Date(dose.dateTime) <= windowEnd)
     .sort((a, b) => a.dateTime.localeCompare(b.dateTime))
+}
+
+/**
+ * Compute the next dose-time for a medication at the given clock time,
+ * honoring the medication's frequency:
+ *  - daily / twice_daily: today at HH:MM or tomorrow if past.
+ *  - weekly: scan up to 7 days forward to find the next weekday that's in
+ *    the medication's `weekdays` list. Returns null if no weekdays are
+ *    configured (caller treats as un-scheduled).
+ *  - as_needed: returns null (caller already filters, defensive guard).
+ */
+function nextScheduledDoseFor(
+  medication: {
+    frequency: 'daily' | 'twice_daily' | 'weekly' | 'as_needed'
+    weekdays?: number[]
+  },
+  time: string,
+  now: Date,
+): Date | null {
+  if (medication.frequency === 'as_needed') return null
+  if (medication.frequency === 'weekly') {
+    const allowedDays = medication.weekdays ?? []
+    if (allowedDays.length === 0) return null
+    const [hours = '0', minutes = '0'] = time.split(':')
+    for (let step = 0; step < 7; step += 1) {
+      const candidate = new Date(now)
+      candidate.setDate(now.getDate() + step)
+      candidate.setHours(Number(hours), Number(minutes), 0, 0)
+      if (candidate < now) continue
+      if (allowedDays.includes(candidate.getDay())) return candidate
+    }
+    return null
+  }
+  return nextDateForTime(time, now)
 }
 
 export function careLoad(plan: CarePlan, now = new Date()) {

@@ -38,6 +38,10 @@ export const medicationSchema = z.object({
   dose: z.string(),
   frequency: medicationFrequencySchema,
   times: z.array(z.string()),
+  // 0–6 (Sunday-based) days that a "weekly" medication is taken. Ignored for
+  // daily / twice_daily / as_needed. Optional so older persisted plans and
+  // intake-applied medications stay compatible.
+  weekdays: z.array(z.number().int().min(0).max(6)).optional(),
   prescriber: z.string(),
   purpose: z.string(),
   instructions: z.string(),
