@@ -9,7 +9,56 @@ describe('care planner', () => {
     const doses = upcomingDoses(sampleCarePlan, now, 6)
 
     expect(doses.some((dose) => dose.medicationName === 'Lisinopril')).toBe(true)
-    expect(doses.every((dose) => new Date(dose.dateTime).getTime() >= now.getTime())).toBe(true)
+    // Only 'upcoming' doses are guaranteed to sit in the future relative to
+    // `now`. 'due' (overdue, unconfirmed) and 'confirmed' doses describe
+    // today's slot that has already arrived, so their dateTime legitimately
+    // sits in the past — that is the whole point of surfacing overdue
+    // doses instead of silently rolling them forward to tomorrow. See the
+    // two regression tests below.
+    expect(
+      doses
+        .filter((dose) => dose.status === 'upcoming')
+        .every((dose) => new Date(dose.dateTime).getTime() >= now.getTime()),
+    ).toBe(true)
+  })
+
+  it('flags an unconfirmed dose whose time has already passed today as due, not silently as tomorrow-upcoming', () => {
+    // Regression test: the scheduler used to always roll a past dose time
+    // forward to the next day, which made the 'due' (overdue) status
+    // practically unreachable — a missed dose would just vanish into
+    // "tomorrow, upcoming" with no overdue signal. Apixaban's 08:00 slot in
+    // the sample plan has no lastConfirmedAt and 08:00 has already passed
+    // by 16:45, so it must show up as an overdue 'due' entry for *today*.
+    const now = new Date('2026-05-08T16:45:00.000Z')
+    const doses = upcomingDoses(sampleCarePlan, now, 6)
+    const apixabanMorning = doses.find(
+      (dose) => dose.medicationId === 'med_apixaban' && dose.time === '08:00',
+    )
+
+    expect(apixabanMorning?.status).toBe('due')
+    expect(new Date(apixabanMorning?.dateTime ?? 0).getTime()).toBeLessThan(now.getTime())
+  })
+
+  it('does not mark a later same-day dose confirmed just because an earlier dose was confirmed', () => {
+    // Regression test: medications only carry a single lastConfirmedAt
+    // timestamp, but twice_daily medications have two dose times per day.
+    // Confirming the 08:00 dose must not retroactively mark the still
+    // in-the-future 20:00 dose as 'confirmed' — a caregiver seeing "Done"
+    // on the evening dose before it was actually given could skip it.
+    // Metformin in the sample plan was confirmed at 08:04 UTC; at 16:45 the
+    // 20:00 dose has not happened yet and must not read as confirmed.
+    const now = new Date('2026-05-08T16:45:00.000Z')
+    const doses = upcomingDoses(sampleCarePlan, now, 6)
+    const metforminMorning = doses.find(
+      (dose) => dose.medicationId === 'med_metformin' && dose.time === '08:00',
+    )
+    const metforminEvening = doses.find(
+      (dose) => dose.medicationId === 'med_metformin' && dose.time === '20:00',
+    )
+
+    expect(metforminMorning?.status).toBe('confirmed')
+    expect(metforminEvening?.status).not.toBe('confirmed')
+    expect(metforminEvening?.status).toBe('upcoming')
   })
 
   it('summarizes care load', () => {
